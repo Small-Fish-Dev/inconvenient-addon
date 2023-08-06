@@ -12,7 +12,8 @@
   "HasCode": true,
   "CodePath": "/code/",
   "PackageReferences": [
-    "fish.hs_hampter"
+    "fish.hs_hampter",
+    "rust.rock_cliff_a"
   ],
   "EditorReferences": null,
   "Metadata": {

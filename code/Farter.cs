@@ -16,8 +16,9 @@ public class Farter
         }
     }
 
-    private static RangedFloat MicSpamInterval = new (60f, 120f);
-    private static RangedFloat GaslightInterval = new (20f, 60f);
+    private static RangedFloat _micSpamInterval = new(60f, 120f);
+    private static RangedFloat _gaslightInterval = new(20f, 60f);
+    private static RangedFloat _inconvenientRockInterval = new(20, 60);
 
     private static Farter _the;
 
@@ -25,9 +26,11 @@ public class Farter
     private Sound Current;
     private Queue<MicSpamAsset> Playlist = new();
     private TimeSince LastMicSpam = 0;
-    private float NextMicSpam = MicSpamInterval.GetValue();
+    private float NextMicSpam = _micSpamInterval.GetValue();
     private TimeSince LastGaslight = 0;
-    private float NextGaslight = GaslightInterval.GetValue();
+    private float NextGaslight = _gaslightInterval.GetValue();
+    private TimeSince LastInconvenientRock = 0;
+    private float NextInconvenientRock = _inconvenientRockInterval.GetValue();
 
     private Farter()
     {
@@ -61,7 +64,7 @@ public class Farter
             {
                 Current = Sound.FromScreen(se);
                 LastMicSpam = 0;
-                NextMicSpam = MicSpamInterval.GetValue();
+                NextMicSpam = _micSpamInterval.GetValue();
             }
         }
 
@@ -78,7 +81,8 @@ public class Farter
 
                 var playersExceptVictim = Game.Clients.Except(new[] { victim }).ToList();
                 IClient p = null;
-                if (playersExceptVictim.Count > 0)
+                if (playersExceptVictim.Count > 0 &&
+                    new RangedFloat(0, 100).GetValue() > 20) // 20% chance of getting message from garry 
                 {
                     p = playersExceptVictim.OrderBy(a => Guid.NewGuid()).First();
                 }
@@ -92,7 +96,61 @@ public class Farter
             }
 
             LastGaslight = 0;
-            NextGaslight = GaslightInterval.GetValue();
+            NextGaslight = _gaslightInterval.GetValue();
+        }
+
+        if (LastInconvenientRock > NextInconvenientRock)
+        {
+            var iterations = 3;
+            var bestPosition = Vector3.Zero;
+            var bounds = Game.PhysicsWorld.Body.GetBounds();
+            var worldHeight = (bounds.Maxs - bounds.Mins).z;
+
+            while (iterations > 0)
+            {
+                var randomPosition = bounds.RandomPointInside;
+                var traceDown = Trace.Ray(randomPosition.WithZ(bounds.Maxs.z),
+                        randomPosition.WithZ(bounds.Maxs.z) + Vector3.Down * worldHeight).StaticOnly()
+                    .Run();
+                bestPosition = traceDown.Hit ? traceDown.EndPosition : randomPosition;
+
+                var atLeastOneSeesTheRock = false;
+                foreach (var cl in Game.Clients)
+                {
+                    var pawn = cl.Pawn;
+                    if (pawn is not AnimatedEntity player)
+                        continue;
+
+                    if (Math.Abs(
+                            Rotation.LookAt(bestPosition - pawn.Position).Yaw() - pawn.Rotation.Yaw()
+                        ) < 45)
+                    {
+                        // The rock is in player's FOV, let's see if they really see it
+                        var t = Trace.Ray(bestPosition, player.Position).WithTag("player").Run();
+                        if (t.Hit && t.Entity == player)
+                        {
+                            //Log.Info($"Player {cl.Name} sees the rock at {bestPosition}");
+                            atLeastOneSeesTheRock = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (atLeastOneSeesTheRock)
+                {
+                    //Log.Info("At least one sees the rock");
+                    iterations--;
+                }
+                else
+                    break;
+            }
+
+            _ = new InconvenientRock { Position = bestPosition };
+#if DEBUG
+            //Log.Info($"spawned the rock at {bestPosition} after {3 - iterations} iterations");
+#endif
+            LastInconvenientRock = 0;
+            NextInconvenientRock = _inconvenientRockInterval.GetValue();
         }
     }
 
