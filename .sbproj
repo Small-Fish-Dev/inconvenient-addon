@@ -3,7 +3,7 @@
   "Type": "addon",
   "Org": "fish",
   "Ident": "roommates_door",
-  "Tags": "runtime",
+  "Tags": "runtime sandbox entity",
   "Schema": 1,
   "HasAssets": true,
   "AssetsPath": "",
