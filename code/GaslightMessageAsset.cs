@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Sandbox;
 
 namespace Roomm8;
@@ -18,4 +19,15 @@ public class GaslightMessageAsset : GameResource
         if (!_all.Contains(this))
             _all.Add(this);
     }
+
+/*#if DEBUG
+    [ConCmd.Admin("gaslight_all")]
+    private static void PrintAllGaslightMessages()
+    {
+        foreach (var message in All.OrderBy(x => x.Message))
+        {
+            Log.Info($"{message.Message}");
+        }
+    }
+#endif*/
 }
