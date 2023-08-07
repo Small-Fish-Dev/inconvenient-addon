@@ -96,6 +96,9 @@ public class Farter
                     p = playersExceptVictim.OrderBy(a => Guid.NewGuid()).First();
                 }
 
+                if (p is null && new RangedFloat(0, 100).GetValue() > 25) // 25% chance of getting a "key" from garry
+                    message = $"Thank you for playing, here's an Invite Code: {Guid.NewGuid().ToString().ToUpper()}";
+
                 Chat.AddChatEntry(
                     To.Single(victim),
                     p?.Name ?? "garry",
