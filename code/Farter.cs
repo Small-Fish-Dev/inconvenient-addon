@@ -5,7 +5,7 @@ using Sandbox;
 
 namespace Roomm8;
 
-public class Farter
+public partial class Farter
 {
     public static Farter The
     {
@@ -91,19 +91,21 @@ public class Farter
                 var playersExceptVictim = Game.Clients.Except(new[] { victim }).ToList();
                 IClient p = null;
                 if (playersExceptVictim.Count > 0 &&
-                    new RangedFloat(0, 100).GetValue() > 20) // 20% chance of getting message from garry 
+                    new RangedFloat(0, 100).GetValue() > 20) // 20% chance of getting message from "garry" 
                 {
                     p = playersExceptVictim.OrderBy(a => Guid.NewGuid()).First();
                 }
 
-                if (p is null && new RangedFloat(0, 100).GetValue() > 10) // 10% chance of getting a "key" from garry
+                if (p is null && new RangedFloat(0, 100).GetValue() < 20) // 20% chance of getting a "key" from "garry"
                     message = $"Thank you for playing, here's an Invite Code: {Guid.NewGuid().ToString().ToUpper()}";
 
-                Chat.AddChatEntry(
+                var name = p?.Name ?? "garry";
+                var steamid64 = p?.SteamId ?? 76561197960279927;
+                SendFakeMessage(
                     To.Single(victim),
-                    p?.Name ?? "garry",
+                    name,
                     message,
-                    p?.SteamId ?? 76561197960279927
+                    steamid64
                 );
             }
 
@@ -172,6 +174,13 @@ public class Farter
             LastFakeException = 0;
             NextFakeException = _fakeExceptionInterval.GetValue();
         }
+    }
+
+    [ClientRpc]
+    public static void SendFakeMessage(string name, string message, long playerId)
+    {
+        Chat.Current?.AddEntry(name, message, playerId, false);
+        Log.Info( $"{name}/{playerId}: {message}" );
     }
 
     private void PopulatePlaylist()
